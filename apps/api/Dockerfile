@@ -31,16 +31,20 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Copy compiled output and runtime dependencies
-COPY --from=builder /app/apps/api/dist ./dist
-COPY --from=builder /app/apps/api/node_modules ./node_modules
-COPY --from=builder /app/apps/api/prisma ./prisma
+# Keep monorepo structure so pnpm-hoisted packages (prisma CLI) are resolvable
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/apps/api/node_modules ./apps/api/node_modules
+COPY --from=builder /app/apps/api/dist ./apps/api/dist
+COPY --from=builder /app/apps/api/prisma ./apps/api/prisma
+COPY --from=builder /app/apps/api/package.json ./apps/api/package.json
 
 # Create data directory for SQLite volume
-RUN mkdir -p /app/data && chown node:node /app/data
+RUN mkdir -p /app/data && chown node:node /app/data /app/apps/api
 USER node
 
 EXPOSE 3001
+
+WORKDIR /app/apps/api
 
 # Run migrations then start the server
 CMD ["sh", "-c", "npx prisma migrate deploy && dumb-init node dist/main"]
