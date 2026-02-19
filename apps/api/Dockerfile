@@ -4,7 +4,7 @@ RUN npm install -g pnpm@9
 WORKDIR /app
 
 # Copy workspace manifests
-COPY package.json pnpm-workspace.yaml turbo.json ./
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml turbo.json ./
 COPY apps/api/package.json ./apps/api/
 
 # Install only production deps for the api workspace

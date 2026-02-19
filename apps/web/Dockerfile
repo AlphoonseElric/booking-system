@@ -3,7 +3,7 @@ FROM node:20-alpine AS deps
 RUN npm install -g pnpm@9
 WORKDIR /app
 
-COPY package.json pnpm-workspace.yaml turbo.json ./
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml turbo.json ./
 COPY apps/web/package.json ./apps/web/
 
 RUN pnpm install --filter @booking/web --frozen-lockfile
