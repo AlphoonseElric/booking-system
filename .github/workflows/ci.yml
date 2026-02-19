@@ -1,0 +1,54 @@
+name: CI — Lint & Build
+
+on:
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  lint-and-build:
+    name: Lint & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint (backend)
+        run: pnpm --filter @booking/api lint
+
+      - name: Lint (frontend)
+        run: pnpm --filter @booking/web lint
+
+      - name: Build (backend)
+        run: pnpm --filter @booking/api build
+        env:
+          DATABASE_URL: file:./test.db
+
+      - name: Run unit tests
+        run: pnpm --filter @booking/api test
+        env:
+          DATABASE_URL: file:./test.db
+
+      - name: Build (frontend)
+        run: pnpm --filter @booking/web build
+        env:
+          NEXTAUTH_URL: http://localhost:3000
+          NEXTAUTH_SECRET: ci-secret-not-real
+          GOOGLE_CLIENT_ID: ci-placeholder
+          GOOGLE_CLIENT_SECRET: ci-placeholder
+          NEXT_PUBLIC_API_URL: http://localhost:3001
+          API_URL: http://localhost:3001
