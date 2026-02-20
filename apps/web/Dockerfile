@@ -1,31 +1,25 @@
 # ─── Stage 1: Install dependencies ──────────────────────────────────────────
 FROM node:20-alpine AS deps
-RUN npm install -g pnpm@9
-WORKDIR /app
+WORKDIR /app/apps/web
 
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml turbo.json ./
-COPY apps/web/package.json ./apps/web/
-
-RUN pnpm install --filter @booking/web --frozen-lockfile
+# Use npm (not pnpm) so node_modules has real files, not pnpm symlinks.
+# Next.js standalone requires real files to bundle deps correctly.
+COPY apps/web/package.json ./
+RUN npm install
 
 # ─── Stage 2: Build ───────────────────────────────────────────────────────────
 FROM node:20-alpine AS builder
-RUN npm install -g pnpm@9
-WORKDIR /app
+WORKDIR /app/apps/web
 
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
-COPY package.json pnpm-workspace.yaml turbo.json ./
-COPY apps/web ./apps/web
+COPY --from=deps /app/apps/web/node_modules ./node_modules
+COPY apps/web ./
 
 # Build args — injected at build time for NEXT_PUBLIC_ vars
 ARG NEXT_PUBLIC_API_URL=http://localhost:3001
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-
-# Disable Next.js telemetry in CI
 ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN pnpm --filter @booking/web build
+RUN npx next build
 
 # ─── Stage 3: Production image ────────────────────────────────────────────────
 FROM node:20-alpine AS production
@@ -35,10 +29,8 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Copy standalone output (contains server.js + .next/server)
+# standalone output has server.js at root + all deps bundled (npm, no symlinks)
 COPY --from=builder /app/apps/web/.next/standalone ./
-# Overwrite with full builder node_modules so pnpm symlinks resolve correctly
-COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/apps/web/.next/static ./.next/static
 COPY --from=builder /app/apps/web/public ./public
 
