@@ -70,27 +70,24 @@ jobs:
           tags: ${{ steps.meta-web.outputs.tags }}
           labels: ${{ steps.meta-web.outputs.labels }}
           build-args: |
-            NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
+            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
   # ─── Deploy to Railway ──────────────────────────────────────────────────────
-  # Uncomment this job after setting RAILWAY_TOKEN in repo secrets
-  # and linking the services in railway.json
-  #
-  # deploy-railway:
-  #   name: Deploy to Railway
-  #   needs: build-and-push
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - name: Install Railway CLI
-  #       run: npm install -g @railway/cli
-  #     - name: Deploy API
-  #       run: railway up --service booking-api --detach
-  #       env:
-  #         RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-  #     - name: Deploy Web
-  #       run: railway up --service booking-web --detach
-  #       env:
-  #         RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+  deploy-railway:
+    name: Deploy to Railway
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+      - name: Deploy API
+        run: railway up --service booking-api --detach
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      - name: Deploy Web
+        run: railway up --service booking-web --detach
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
