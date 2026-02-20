@@ -39,6 +39,7 @@ describe('CheckAvailabilityUseCase', () => {
       startTime: makeFutureDate(1),
       endTime: makeFutureDate(2),
       googleAccessToken: 'token',
+      googleRefreshToken: 'refresh_token',
     });
 
     expect(result.available).toBe(true);
@@ -50,7 +51,15 @@ describe('CheckAvailabilityUseCase', () => {
   });
 
   it('should return available=false when a DB conflict exists', async () => {
-    const conflictingBooking = new Booking('b-1', 'Existing Meeting', new Date(), new Date(), 'user-1', null, new Date());
+    const conflictingBooking = new Booking(
+      'b-1',
+      'Existing Meeting',
+      new Date(),
+      new Date(),
+      'user-1',
+      null,
+      new Date(),
+    );
     bookingRepo.findOverlapping.mockResolvedValue([conflictingBooking]);
     calendarService.checkConflicts.mockResolvedValue([]);
 
@@ -58,6 +67,7 @@ describe('CheckAvailabilityUseCase', () => {
       startTime: makeFutureDate(1),
       endTime: makeFutureDate(2),
       googleAccessToken: 'token',
+      googleRefreshToken: 'refresh_token',
     });
 
     expect(result.available).toBe(false);
@@ -75,6 +85,7 @@ describe('CheckAvailabilityUseCase', () => {
       startTime: makeFutureDate(1),
       endTime: makeFutureDate(2),
       googleAccessToken: 'token',
+      googleRefreshToken: 'refresh_token',
     });
 
     expect(result.available).toBe(false);
@@ -83,7 +94,15 @@ describe('CheckAvailabilityUseCase', () => {
   });
 
   it('should return available=false when conflicts exist in both sources', async () => {
-    const conflictingBooking = new Booking('b-1', 'DB Meeting', new Date(), new Date(), 'user-1', null, new Date());
+    const conflictingBooking = new Booking(
+      'b-1',
+      'DB Meeting',
+      new Date(),
+      new Date(),
+      'user-1',
+      null,
+      new Date(),
+    );
     bookingRepo.findOverlapping.mockResolvedValue([conflictingBooking]);
     calendarService.checkConflicts.mockResolvedValue([
       { id: 'gcal-1', title: 'GCal Event', start: new Date(), end: new Date() },
@@ -93,6 +112,7 @@ describe('CheckAvailabilityUseCase', () => {
       startTime: makeFutureDate(1),
       endTime: makeFutureDate(2),
       googleAccessToken: 'token',
+      googleRefreshToken: 'refresh_token',
     });
 
     expect(result.available).toBe(false);
@@ -106,6 +126,7 @@ describe('CheckAvailabilityUseCase', () => {
         startTime: makeFutureDate(2),
         endTime: makeFutureDate(1),
         googleAccessToken: 'token',
+        googleRefreshToken: 'refresh_token',
       }),
     ).rejects.toThrow(BadRequestException);
   });
@@ -119,6 +140,7 @@ describe('CheckAvailabilityUseCase', () => {
         startTime: pastTime.toISOString(),
         endTime: makeFutureDate(1),
         googleAccessToken: 'token',
+        googleRefreshToken: 'refresh_token',
       }),
     ).rejects.toThrow(BadRequestException);
   });
@@ -132,6 +154,7 @@ describe('CheckAvailabilityUseCase', () => {
         startTime: makeFutureDate(1),
         endTime: makeFutureDate(2),
         googleAccessToken: 'token',
+        googleRefreshToken: 'refresh_token',
       }),
     ).rejects.toThrow(ServiceUnavailableException);
   });

@@ -1,6 +1,18 @@
-import { Injectable, Inject, BadRequestException, ServiceUnavailableException, Logger } from '@nestjs/common';
-import { IBookingRepository, BOOKING_REPOSITORY } from '../../../domain/repositories/booking.repository.interface';
-import { ICalendarService, CALENDAR_SERVICE } from '../../../domain/services/calendar.service.interface';
+import {
+  Injectable,
+  Inject,
+  BadRequestException,
+  ServiceUnavailableException,
+  Logger,
+} from '@nestjs/common';
+import {
+  IBookingRepository,
+  BOOKING_REPOSITORY,
+} from '../../../domain/repositories/booking.repository.interface';
+import {
+  ICalendarService,
+  CALENDAR_SERVICE,
+} from '../../../domain/services/calendar.service.interface';
 import { CheckAvailabilityDto, AvailabilityResultDto } from '../../dtos/check-availability.dto';
 
 @Injectable()
@@ -28,10 +40,14 @@ export class CheckAvailabilityUseCase {
     let calendarConflicts: AvailabilityResultDto['calendarConflicts'] = [];
 
     try {
-      // Run both checks in parallel — core of the Conflict Manager
       const [overlappingBookings, googleConflicts] = await Promise.all([
         this.bookingRepository.findOverlapping(userId, startTime, endTime),
-        this.calendarService.checkConflicts(dto.googleAccessToken, startTime, endTime),
+        this.calendarService.checkConflicts(
+          dto.googleAccessToken,
+          dto.googleRefreshToken,
+          startTime,
+          endTime,
+        ),
       ]);
 
       dbConflicts = overlappingBookings.map((b) => ({

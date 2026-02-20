@@ -3,6 +3,7 @@ import { PrismaService } from './prisma.service';
 import {
   IBookingRepository,
   CreateBookingData,
+  UpdateBookingData,
 } from '../../../domain/repositories/booking.repository.interface';
 import { Booking } from '../../../domain/entities/booking.entity';
 
@@ -55,6 +56,14 @@ export class PrismaBookingRepository implements IBookingRepository {
     const record = await this.prisma.booking.update({
       where: { id },
       data: { googleEventId },
+    });
+    return this.toDomain(record);
+  }
+
+  async update(id: string, data: UpdateBookingData): Promise<Booking> {
+    const record = await this.prisma.booking.update({
+      where: { id },
+      data,
     });
     return this.toDomain(record);
   }

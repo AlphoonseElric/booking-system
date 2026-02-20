@@ -16,6 +16,11 @@ export class CheckAvailabilityDto {
   @IsString()
   @IsNotEmpty()
   googleAccessToken: string;
+
+  @ApiProperty({ description: 'Google OAuth refresh token for refreshing access token' })
+  @IsString()
+  @IsNotEmpty()
+  googleRefreshToken: string;
 }
 
 export class AvailabilityResultDto {

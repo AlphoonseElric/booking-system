@@ -13,4 +13,5 @@ export interface IUserRepository {
   findByGoogleId(googleId: string): Promise<User | null>;
   findById(id: string): Promise<User | null>;
   upsert(data: UpsertUserData): Promise<User>;
+  updateRefreshToken(userId: string, refreshToken: string): Promise<void>;
 }

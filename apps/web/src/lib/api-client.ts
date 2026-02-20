@@ -38,14 +38,25 @@ async function request<T>(path: string, options: RequestInit, backendToken: stri
 export const apiClient = {
   checkAvailability(
     backendToken: string,
-    data: { startTime: string; endTime: string; googleAccessToken: string },
+    data: {
+      startTime: string;
+      endTime: string;
+      googleAccessToken: string;
+      googleRefreshToken: string;
+    },
   ): Promise<AvailabilityResult> {
     return request('/bookings/check', { method: 'POST', body: JSON.stringify(data) }, backendToken);
   },
 
   createBooking(
     backendToken: string,
-    data: { title: string; startTime: string; endTime: string; googleAccessToken: string },
+    data: {
+      title: string;
+      startTime: string;
+      endTime: string;
+      googleAccessToken: string;
+      googleRefreshToken: string;
+    },
   ): Promise<Booking> {
     return request('/bookings', { method: 'POST', body: JSON.stringify(data) }, backendToken);
   },
@@ -54,9 +65,14 @@ export const apiClient = {
     return request('/bookings', { method: 'GET' }, backendToken);
   },
 
-  cancelBooking(backendToken: string, id: string, googleAccessToken: string): Promise<void> {
+  cancelBooking(
+    backendToken: string,
+    id: string,
+    googleAccessToken: string,
+    googleRefreshToken: string,
+  ): Promise<void> {
     return request(
-      `/bookings/${id}?googleAccessToken=${encodeURIComponent(googleAccessToken)}`,
+      `/bookings/${id}?googleAccessToken=${encodeURIComponent(googleAccessToken)}&googleRefreshToken=${encodeURIComponent(googleRefreshToken)}`,
       { method: 'DELETE' },
       backendToken,
     );

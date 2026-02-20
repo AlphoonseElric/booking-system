@@ -6,8 +6,14 @@ import {
   ServiceUnavailableException,
   Logger,
 } from '@nestjs/common';
-import { IBookingRepository, BOOKING_REPOSITORY } from '../../../domain/repositories/booking.repository.interface';
-import { ICalendarService, CALENDAR_SERVICE } from '../../../domain/services/calendar.service.interface';
+import {
+  IBookingRepository,
+  BOOKING_REPOSITORY,
+} from '../../../domain/repositories/booking.repository.interface';
+import {
+  ICalendarService,
+  CALENDAR_SERVICE,
+} from '../../../domain/services/calendar.service.interface';
 import { Booking } from '../../../domain/entities/booking.entity';
 import { CreateBookingDto } from '../../dtos/create-booking.dto';
 
@@ -32,15 +38,16 @@ export class CreateBookingUseCase {
       throw new BadRequestException('Cannot book a time slot in the past');
     }
 
-    // Re-check for conflicts right before creating (prevents race conditions)
     const [dbConflicts, calendarConflicts] = await Promise.all([
       this.bookingRepository.findOverlapping(userId, startTime, endTime),
-      this.calendarService.checkConflicts(dto.googleAccessToken, startTime, endTime).catch((err) => {
-        this.logger.error('Google Calendar check failed during booking creation', err);
-        throw new ServiceUnavailableException(
-          'Cannot confirm booking: Google Calendar is temporarily unavailable.',
-        );
-      }),
+      this.calendarService
+        .checkConflicts(dto.googleAccessToken, dto.googleRefreshToken, startTime, endTime)
+        .catch((err) => {
+          this.logger.error('Google Calendar check failed during booking creation', err);
+          throw new ServiceUnavailableException(
+            'Cannot confirm booking: Google Calendar is temporarily unavailable.',
+          );
+        }),
     ]);
 
     if (dbConflicts.length > 0) {
@@ -55,7 +62,6 @@ export class CreateBookingUseCase {
       );
     }
 
-    // Persist in local DB first
     const booking = await this.bookingRepository.create({
       title: dto.title,
       startTime,
@@ -63,19 +69,21 @@ export class CreateBookingUseCase {
       userId,
     });
 
-    // Create event in Google Calendar — if it fails, rollback DB record
     try {
-      const googleEventId = await this.calendarService.createEvent(dto.googleAccessToken, {
-        title: dto.title,
-        startTime,
-        endTime,
-        description: `Booking created via Booking System (ID: ${booking.id})`,
-      });
+      const googleEventId = await this.calendarService.createEvent(
+        dto.googleAccessToken,
+        dto.googleRefreshToken,
+        {
+          title: dto.title,
+          startTime,
+          endTime,
+          description: `Booking created via Booking System (ID: ${booking.id})`,
+        },
+      );
 
       return this.bookingRepository.updateGoogleEventId(booking.id, googleEventId);
     } catch (error) {
       this.logger.error(`Failed to create Google Calendar event for booking ${booking.id}`, error);
-      // Rollback: remove the booking from DB to keep both systems consistent
       await this.bookingRepository.delete(booking.id);
       throw new ServiceUnavailableException(
         'Booking could not be confirmed: failed to create Google Calendar event. Please try again.',

@@ -102,13 +102,16 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Redeploy API service
+        run: |
+          curl -sf -X POST https://backboard.railway.com/graphql/v2 \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.RAILWAY_API_TOKEN }}" \
+            -d '{"query":"mutation{serviceInstanceRedeploy(serviceId:\"6f2f9b1d-a02b-49ca-a32d-60ad20a208d4\",environmentId:\"f184c856-43e6-4c44-b3a1-4e7141297c1a\")}"}'
 
-      - name: Install Railway CLI
-        run: npm install -g @railway/cli
-
-      - name: Deploy to Railway
-        run: railway up --detach
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      - name: Redeploy Web service
+        run: |
+          curl -sf -X POST https://backboard.railway.com/graphql/v2 \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.RAILWAY_API_TOKEN }}" \
+            -d '{"query":"mutation{serviceInstanceRedeploy(serviceId:\"bb1a34e2-d5ad-4e4d-b13c-4a220675d37c\",environmentId:\"f184c856-43e6-4c44-b3a1-4e7141297c1a\")}"}'
