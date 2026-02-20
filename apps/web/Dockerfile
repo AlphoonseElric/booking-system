@@ -40,6 +40,9 @@ COPY --from=builder /app/apps/web/.next/standalone ./
 COPY --from=builder /app/apps/web/.next/static ./apps/web/.next/static
 COPY --from=builder /app/apps/web/public ./apps/web/public
 
+# DEBUG: show where server.js landed (remove after confirming)
+RUN find /app -name "server.js" -maxdepth 5 2>/dev/null || echo "server.js NOT FOUND"
+
 USER node
 EXPOSE 3000
 
