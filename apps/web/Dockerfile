@@ -35,15 +35,12 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# outputFileTracingRoot preserves monorepo structure in standalone output
+# outputFileTracingRoot puts server.js at standalone root with all deps bundled
 COPY --from=builder /app/apps/web/.next/standalone ./
-COPY --from=builder /app/apps/web/.next/static ./apps/web/.next/static
-COPY --from=builder /app/apps/web/public ./apps/web/public
-
-# DEBUG: show where server.js landed (remove after confirming)
-RUN find /app -name "server.js" -maxdepth 5 2>/dev/null || echo "server.js NOT FOUND"
+COPY --from=builder /app/apps/web/.next/static ./.next/static
+COPY --from=builder /app/apps/web/public ./public
 
 USER node
 EXPOSE 3000
 
-CMD ["dumb-init", "node", "apps/web/server.js"]
+CMD ["dumb-init", "node", "server.js"]
