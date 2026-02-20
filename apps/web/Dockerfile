@@ -5,7 +5,8 @@ WORKDIR /app/apps/web
 # Use npm (not pnpm) so node_modules has real files, not pnpm symlinks.
 # Next.js standalone requires real files to bundle deps correctly.
 COPY apps/web/package.json ./
-RUN npm install
+# Install sharp (required for image optimization in Next.js standalone)
+RUN npm install && npm install sharp
 
 # ─── Stage 2: Build ───────────────────────────────────────────────────────────
 FROM node:20-alpine AS builder
@@ -33,6 +34,9 @@ ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=builder /app/apps/web/.next/standalone ./
 COPY --from=builder /app/apps/web/.next/static ./.next/static
 COPY --from=builder /app/apps/web/public ./public
+
+# Create cache directory and set permissions for node user
+RUN mkdir -p /app/.next/cache && chown -R node:node /app
 
 USER node
 EXPOSE 3000
