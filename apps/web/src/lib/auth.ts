@@ -9,8 +9,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       authorization: {
         params: {
           // Request calendar read/write scope along with the default profile scopes
-          scope:
-            'openid email profile https://www.googleapis.com/auth/calendar.events',
+          scope: 'openid email profile https://www.googleapis.com/auth/calendar.events',
           access_type: 'offline',
           prompt: 'consent',
         },
@@ -36,6 +35,28 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             const data = await res.json();
             token.backendToken = data.accessToken;
             token.backendUser = data.user;
+
+            // Store the Google refresh token server-side so the backend can call
+            // the Calendar API when webhooks arrive (no active user session needed).
+            // Then immediately register the Calendar watch so notifications start flowing.
+            if (account.refresh_token) {
+              await fetch(`${process.env.API_URL}/calendar/watch/refresh-token`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${data.accessToken}`,
+                },
+                body: JSON.stringify({ refreshToken: account.refresh_token }),
+              }).catch((err) => console.error('Failed to store refresh token on backend:', err));
+
+              await fetch(`${process.env.API_URL}/calendar/watch`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${data.accessToken}`,
+                },
+              }).catch((err) => console.error('Failed to create calendar watch on backend:', err));
+            }
           } else {
             console.error('Backend auth failed:', await res.text());
           }
@@ -49,6 +70,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
     async session({ session, token }) {
       session.googleAccessToken = token.googleAccessToken ?? '';
+      session.googleRefreshToken = token.googleRefreshToken ?? '';
       session.backendToken = token.backendToken ?? '';
       session.backendUser = token.backendUser ?? {
         id: '',
