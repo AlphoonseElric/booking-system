@@ -35,8 +35,10 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# outputFileTracingRoot puts server.js at standalone root with all deps bundled
+# Copy standalone output (contains server.js + .next/server)
 COPY --from=builder /app/apps/web/.next/standalone ./
+# Overwrite with full builder node_modules so pnpm symlinks resolve correctly
+COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/apps/web/.next/static ./.next/static
 COPY --from=builder /app/apps/web/public ./public
 
