@@ -6,5 +6,6 @@ export class User {
     public readonly name: string | null,
     public readonly pictureUrl: string | null,
     public readonly createdAt: Date,
+    public readonly googleRefreshToken: string | null = null,
   ) {}
 }
