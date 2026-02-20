@@ -1,12 +1,12 @@
+import { Injectable, Inject, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
 import {
-  Injectable,
-  Inject,
-  NotFoundException,
-  ForbiddenException,
-  Logger,
-} from '@nestjs/common';
-import { IBookingRepository, BOOKING_REPOSITORY } from '../../../domain/repositories/booking.repository.interface';
-import { ICalendarService, CALENDAR_SERVICE } from '../../../domain/services/calendar.service.interface';
+  IBookingRepository,
+  BOOKING_REPOSITORY,
+} from '../../../domain/repositories/booking.repository.interface';
+import {
+  ICalendarService,
+  CALENDAR_SERVICE,
+} from '../../../domain/services/calendar.service.interface';
 
 @Injectable()
 export class CancelBookingUseCase {
@@ -17,7 +17,12 @@ export class CancelBookingUseCase {
     @Inject(CALENDAR_SERVICE) private readonly calendarService: ICalendarService,
   ) {}
 
-  async execute(userId: string, bookingId: string, googleAccessToken: string): Promise<void> {
+  async execute(
+    userId: string,
+    bookingId: string,
+    googleAccessToken: string,
+    googleRefreshToken: string,
+  ): Promise<void> {
     const booking = await this.bookingRepository.findById(bookingId);
 
     if (!booking) {
@@ -28,12 +33,14 @@ export class CancelBookingUseCase {
       throw new ForbiddenException('You do not have permission to cancel this booking');
     }
 
-    // Delete from Google Calendar if event was created there
     if (booking.googleEventId) {
       try {
-        await this.calendarService.deleteEvent(googleAccessToken, booking.googleEventId);
+        await this.calendarService.deleteEvent(
+          googleAccessToken,
+          googleRefreshToken,
+          booking.googleEventId,
+        );
       } catch (error) {
-        // Log but don't block the cancellation — DB is source of truth
         this.logger.warn(
           `Could not delete Google Calendar event ${booking.googleEventId}: ${error.message}`,
         );

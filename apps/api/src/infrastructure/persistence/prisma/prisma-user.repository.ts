@@ -35,6 +35,13 @@ export class PrismaUserRepository implements IUserRepository {
     return this.toDomain(record);
   }
 
+  async updateRefreshToken(userId: string, refreshToken: string): Promise<void> {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { googleRefreshToken: refreshToken },
+    });
+  }
+
   private toDomain(record: {
     id: string;
     email: string;
@@ -42,7 +49,16 @@ export class PrismaUserRepository implements IUserRepository {
     name: string | null;
     pictureUrl: string | null;
     createdAt: Date;
+    googleRefreshToken: string | null;
   }): User {
-    return new User(record.id, record.email, record.googleId, record.name, record.pictureUrl, record.createdAt);
+    return new User(
+      record.id,
+      record.email,
+      record.googleId,
+      record.name,
+      record.pictureUrl,
+      record.createdAt,
+      record.googleRefreshToken,
+    );
   }
 }
