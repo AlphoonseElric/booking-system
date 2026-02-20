@@ -15,7 +15,16 @@ export interface CreateCalendarEventData {
 }
 
 export interface ICalendarService {
-  checkConflicts(accessToken: string, startTime: Date, endTime: Date): Promise<CalendarConflict[]>;
-  createEvent(accessToken: string, event: CreateCalendarEventData): Promise<string>;
-  deleteEvent(accessToken: string, eventId: string): Promise<void>;
+  checkConflicts(
+    accessToken: string,
+    refreshToken: string,
+    startTime: Date,
+    endTime: Date,
+  ): Promise<CalendarConflict[]>;
+  createEvent(
+    accessToken: string,
+    refreshToken: string,
+    event: CreateCalendarEventData,
+  ): Promise<string>;
+  deleteEvent(accessToken: string, refreshToken: string, eventId: string): Promise<void>;
 }

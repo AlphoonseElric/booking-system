@@ -9,6 +9,12 @@ export interface CreateBookingData {
   userId: string;
 }
 
+export interface UpdateBookingData {
+  title?: string;
+  startTime?: Date;
+  endTime?: Date;
+}
+
 export interface IBookingRepository {
   findOverlapping(userId: string, startTime: Date, endTime: Date, excludeId?: string): Promise<Booking[]>;
   create(data: CreateBookingData): Promise<Booking>;
@@ -16,4 +22,5 @@ export interface IBookingRepository {
   findById(id: string): Promise<Booking | null>;
   delete(id: string): Promise<void>;
   updateGoogleEventId(id: string, googleEventId: string): Promise<Booking>;
+  update(id: string, data: UpdateBookingData): Promise<Booking>;
 }

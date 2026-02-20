@@ -26,7 +26,10 @@ import { CheckAvailabilityUseCase } from '../../../application/use-cases/booking
 import { CreateBookingUseCase } from '../../../application/use-cases/bookings/create-booking.use-case';
 import { GetUserBookingsUseCase } from '../../../application/use-cases/bookings/get-user-bookings.use-case';
 import { CancelBookingUseCase } from '../../../application/use-cases/bookings/cancel-booking.use-case';
-import { CheckAvailabilityDto, AvailabilityResultDto } from '../../../application/dtos/check-availability.dto';
+import {
+  CheckAvailabilityDto,
+  AvailabilityResultDto,
+} from '../../../application/dtos/check-availability.dto';
 import { CreateBookingDto } from '../../../application/dtos/create-booking.dto';
 
 @ApiTags('Bookings')
@@ -68,12 +71,12 @@ export class BookingsController {
   })
   @ApiResponse({ status: 201, description: 'Booking created successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input or date range' })
-  @ApiResponse({ status: 409, description: 'Conflict with existing booking or Google Calendar event' })
+  @ApiResponse({
+    status: 409,
+    description: 'Conflict with existing booking or Google Calendar event',
+  })
   @ApiResponse({ status: 503, description: 'Google Calendar temporarily unavailable' })
-  async createBooking(
-    @CurrentUser() user: User,
-    @Body() dto: CreateBookingDto,
-  ): Promise<Booking> {
+  async createBooking(@CurrentUser() user: User, @Body() dto: CreateBookingDto): Promise<Booking> {
     return this.createBookingUseCase.execute(user.id, dto);
   }
 
@@ -96,6 +99,11 @@ export class BookingsController {
     required: true,
     description: 'Google OAuth access token to delete the Calendar event',
   })
+  @ApiQuery({
+    name: 'googleRefreshToken',
+    required: true,
+    description: 'Google OAuth refresh token to refresh the access token if needed',
+  })
   @ApiResponse({ status: 204, description: 'Booking cancelled successfully' })
   @ApiResponse({ status: 403, description: 'Not authorized to cancel this booking' })
   @ApiResponse({ status: 404, description: 'Booking not found' })
@@ -103,7 +111,8 @@ export class BookingsController {
     @CurrentUser() user: User,
     @Param('id') id: string,
     @Query('googleAccessToken') googleAccessToken: string,
+    @Query('googleRefreshToken') googleRefreshToken: string,
   ): Promise<void> {
-    return this.cancelBookingUseCase.execute(user.id, id, googleAccessToken);
+    return this.cancelBookingUseCase.execute(user.id, id, googleAccessToken, googleRefreshToken);
   }
 }
