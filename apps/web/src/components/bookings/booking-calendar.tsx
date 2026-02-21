@@ -425,38 +425,41 @@ export function BookingCalendar({ bookings, onBookingClick }: BookingCalendarPro
             /* ── WEEK VIEW ── */
             <div className="flex flex-col flex-1 overflow-hidden">
 
-              {/* Sticky day headers */}
-              <div className={`flex border-b flex-shrink-0 ${cx.header}`}>
-                {/* Gutter placeholder */}
-                <div className={`w-8 sm:w-14 flex-shrink-0 border-r ${cx.header}`} />
-                {displayDays.map((date, idx) => {
-                  const isT = isSameDay(date, now);
-                  return (
-                    <div key={idx}
-                      onClick={() => setSelectedDate(date)}
-                      className={`flex-1 py-2 sm:py-3 flex flex-col items-center gap-0.5 border-r last:border-r-0 cursor-pointer transition-colors ${
-                        isT ? cx.todayCol : cx.normalCol
-                      }`}>
-                      <span className={`text-[10px] sm:text-[11px] font-bold uppercase tracking-wider ${
-                        isT ? cx.todayHdr : cx.dayHeaderTxt
-                      }`}>
-                        {isMobile ? DAYS_1[date.getDay()] : DAYS_SHORT[date.getDay()]}
-                      </span>
-                      <span className={`text-sm font-bold leading-none ${
-                        isT
-                          ? 'w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-violet-600 text-white flex items-center justify-center text-xs sm:text-sm'
-                          : isDark ? 'text-zinc-200' : 'text-gray-800'
-                      }`}>
-                        {date.getDate()}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
+              {/* Scrollable area — day headers live INSIDE here as sticky so
+                  they always share the same width as the columns (no scrollbar mismatch) */}
+              <div ref={scrollRef} className="flex-1 overflow-y-auto">
 
-              {/* Scrollable time grid */}
-              <div ref={scrollRef} className="flex-1 overflow-y-auto relative">
-                <div className="flex" style={{ height: `${24 * HOUR_HEIGHT}px` }}>
+                {/* Sticky day headers */}
+                <div className={`flex border-b sticky top-0 z-10 ${cx.header}`}>
+                  {/* Gutter placeholder */}
+                  <div className={`w-8 sm:w-14 flex-shrink-0 border-r ${cx.header}`} />
+                  {displayDays.map((date, idx) => {
+                    const isT = isSameDay(date, now);
+                    return (
+                      <div key={idx}
+                        onClick={() => setSelectedDate(date)}
+                        className={`flex-1 py-2 sm:py-3 flex flex-col items-center gap-0.5 border-r last:border-r-0 cursor-pointer transition-colors ${
+                          isT ? cx.todayCol : cx.normalCol
+                        }`}>
+                        <span className={`text-[10px] sm:text-[11px] font-bold uppercase tracking-wider ${
+                          isT ? cx.todayHdr : cx.dayHeaderTxt
+                        }`}>
+                          {isMobile ? DAYS_1[date.getDay()] : DAYS_SHORT[date.getDay()]}
+                        </span>
+                        <span className={`text-sm font-bold leading-none ${
+                          isT
+                            ? 'w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-violet-600 text-white flex items-center justify-center text-xs sm:text-sm'
+                            : isDark ? 'text-zinc-200' : 'text-gray-800'
+                        }`}>
+                          {date.getDate()}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Time grid — its own relative context so nowTop is correct */}
+                <div className="flex relative" style={{ height: `${24 * HOUR_HEIGHT}px` }}>
 
                   {/* Time gutter */}
                   <div className={`w-8 sm:w-14 flex-shrink-0 border-r select-none ${cx.timeGutter}`}>
@@ -469,7 +472,7 @@ export function BookingCalendar({ bookings, onBookingClick }: BookingCalendarPro
                   </div>
 
                   {/* Day columns */}
-                  <div className={`flex-1 grid`} style={{ gridTemplateColumns: `repeat(${displayDays.length}, minmax(0, 1fr))` }}>
+                  <div className="flex-1 grid" style={{ gridTemplateColumns: `repeat(${displayDays.length}, minmax(0, 1fr))` }}>
                     {displayDays.map((date, idx) => {
                       const dayB = getBookingsForDate(date);
                       const isT  = isSameDay(date, now);
@@ -502,18 +505,18 @@ export function BookingCalendar({ bookings, onBookingClick }: BookingCalendarPro
                       );
                     })}
                   </div>
-                </div>
 
-                {/* Current time indicator */}
-                {isCurrentWeek && (
-                  <div
-                    className="absolute right-0 z-20 pointer-events-none flex items-center"
-                    style={{ top: `${nowTop}px`, left: isMobile ? '2rem' : '3.5rem' }}
-                  >
-                    <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-red-500 -ml-1 flex-shrink-0 shadow-sm" />
-                    <div className="flex-1 h-px bg-red-500" />
-                  </div>
-                )}
+                  {/* Current time indicator — inside the time grid so top is correct */}
+                  {isCurrentWeek && (
+                    <div
+                      className="absolute right-0 z-20 pointer-events-none flex items-center"
+                      style={{ top: `${nowTop}px`, left: isMobile ? '2rem' : '3.5rem' }}
+                    >
+                      <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-red-500 -ml-1 flex-shrink-0 shadow-sm" />
+                      <div className="flex-1 h-px bg-red-500" />
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
