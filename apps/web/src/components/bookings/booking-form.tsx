@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { apiClient, AvailabilityResult } from '@/lib/api-client';
+import { signOut } from 'next-auth/react';
+import { apiClient, AvailabilityResult, UnauthorizedError } from '@/lib/api-client';
 import { useTheme } from '@/lib/theme-context';
 
 interface BookingFormProps {
@@ -57,6 +58,7 @@ export function BookingForm({
       });
       setAvailability(result);
     } catch (err: unknown) {
+      if (err instanceof UnauthorizedError) { signOut({ callbackUrl: '/' }); return; }
       setError(err instanceof Error ? err.message : 'Failed to check availability');
     } finally {
       setChecking(false);
@@ -77,6 +79,7 @@ export function BookingForm({
       setTitle(''); setAvailability(null);
       onBookingCreated();
     } catch (err: unknown) {
+      if (err instanceof UnauthorizedError) { signOut({ callbackUrl: '/' }); return; }
       setError(err instanceof Error ? err.message : 'Failed to create booking');
     } finally {
       setConfirming(false);

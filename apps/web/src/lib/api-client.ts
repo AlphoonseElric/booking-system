@@ -16,6 +16,10 @@ export interface AvailabilityResult {
   calendarConflicts: { id: string; title: string; start: string; end: string }[];
 }
 
+export class UnauthorizedError extends Error {
+  constructor() { super('Session expired. Please sign in again.'); }
+}
+
 async function request<T>(path: string, options: RequestInit, backendToken: string): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
@@ -25,6 +29,8 @@ async function request<T>(path: string, options: RequestInit, backendToken: stri
       ...options.headers,
     },
   });
+
+  if (res.status === 401) throw new UnauthorizedError();
 
   if (!res.ok) {
     const error = await res.json().catch(() => ({ message: res.statusText }));

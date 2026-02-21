@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Booking, apiClient } from '@/lib/api-client';
+import { signOut } from 'next-auth/react';
+import { Booking, apiClient, UnauthorizedError } from '@/lib/api-client';
 import { useTheme } from '@/lib/theme-context';
 
 interface BookingListProps {
@@ -65,6 +66,7 @@ export function BookingList({
       await apiClient.cancelBooking(backendToken, id, googleAccessToken, googleRefreshToken);
       onCancelled();
     } catch (err: unknown) {
+      if (err instanceof UnauthorizedError) { signOut({ callbackUrl: '/' }); return; }
       setError(err instanceof Error ? err.message : 'Failed to cancel booking');
     } finally {
       setCancellingId(null);

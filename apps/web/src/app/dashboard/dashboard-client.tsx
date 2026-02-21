@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { signOut } from 'next-auth/react';
 import Image from 'next/image';
-import { Booking, apiClient } from '@/lib/api-client';
+import { Booking, apiClient, UnauthorizedError } from '@/lib/api-client';
 import { ThemeProvider, useTheme } from '@/lib/theme-context';
 import { BookingForm } from '@/components/bookings/booking-form';
 import { BookingList } from '@/components/bookings/booking-list';
@@ -55,8 +55,11 @@ function DashboardInner({
     try {
       const updated = await apiClient.getUserBookings(backendToken);
       setBookings(updated);
-    } catch {
-      // silently fail — stale data is better than a broken UI
+    } catch (err) {
+      if (err instanceof UnauthorizedError) {
+        signOut({ callbackUrl: '/' });
+      }
+      // otherwise silently fail — stale data is better than a broken UI
     } finally {
       setRefreshing(false);
     }
