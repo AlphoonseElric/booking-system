@@ -18,5 +18,12 @@ import { CALENDAR_SERVICE } from '../domain/services/calendar.service.interface'
     GetUserBookingsUseCase,
     CancelBookingUseCase,
   ],
+  exports: [
+    CALENDAR_SERVICE,
+    CheckAvailabilityUseCase,
+    CreateBookingUseCase,
+    GetUserBookingsUseCase,
+    CancelBookingUseCase,
+  ],
 })
 export class BookingsModule {}

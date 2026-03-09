@@ -213,6 +213,53 @@ DELETE /bookings/clx9012ijkl?googleAccessToken=ya29.a0AfH6...
 
 ---
 
+### POST `/ai/booking/chat`
+Processes a natural language message through the Claude AI assistant (claude-haiku-4-5).
+Claude interprets the user's intent and calls booking tools automatically, then returns
+a friendly natural language response.
+
+**Headers:** `Authorization: Bearer <backendToken>`
+
+**Request Body:**
+```json
+{
+  "messages": [
+    { "role": "user", "content": "Book a meeting next Tuesday at 2pm for 1 hour called Team Sync" }
+  ],
+  "googleAccessToken": "ya29.a0AfH6...",
+  "googleRefreshToken": "1//0g..."
+}
+```
+
+Pass the full conversation history in `messages` for multi-turn context (up to 50 messages).
+
+**Response `200`:**
+```json
+{
+  "reply": "I checked your availability for Tuesday March 17 at 2:00 PM–3:00 PM — it's free! I've created the booking 'Team Sync' and added it to your Google Calendar.",
+  "bookingsChanged": true
+}
+```
+
+When `bookingsChanged` is `true`, refresh your local booking list.
+
+**Tools Claude can invoke internally:**
+| Tool | Description |
+|------|-------------|
+| `check_availability` | Calls `POST /bookings/check` — DB + GCal in parallel |
+| `create_booking` | Calls `POST /bookings` |
+| `list_bookings` | Calls `GET /bookings` |
+| `cancel_booking` | Calls `DELETE /bookings/:id` |
+
+**Error Responses:**
+| Status | Description |
+|--------|-------------|
+| `400` | Invalid request body (missing messages, invalid role, content too long) |
+| `401` | Missing or invalid backend JWT |
+| `503` | Claude API or Google Calendar temporarily unavailable |
+
+---
+
 ## Data Models
 
 ### Booking

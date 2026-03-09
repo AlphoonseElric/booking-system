@@ -30,6 +30,7 @@ Full-stack booking system that prevents double-bookings by checking **both** a l
 - Google OAuth 2.0 authentication
 - JWT-based API security
 - Clean Architecture (Domain → Application → Infrastructure)
+- **AI Booking Assistant** — natural language chat powered by Claude claude-haiku-4-5 to check availability, create, list, and cancel bookings
 
 ## Tech Stack
 
@@ -38,6 +39,7 @@ Full-stack booking system that prevents double-bookings by checking **both** a l
 | Backend  | NestJS 10, Prisma 5, SQLite, Passport JWT           |
 | Frontend | Next.js 14 (App Router), next-auth v5, Tailwind CSS |
 | Calendar | Google Calendar API v3                              |
+| AI       | Claude claude-haiku-4-5 (Anthropic), @anthropic-ai/sdk    |
 | DevOps   | Docker, docker-compose, GitHub Actions              |
 
 ## Prerequisites
@@ -147,6 +149,14 @@ curl -X POST http://localhost:3001/auth/google \
 
 All booking endpoints require `Authorization: Bearer <jwt>` header.
 
+### AI Booking Assistant
+
+| Method | Endpoint             | Description                               |
+| ------ | -------------------- | ----------------------------------------- |
+| POST   | `/ai/booking/chat`   | Natural language booking via Claude AI    |
+
+Send a conversation history and receive an AI-generated response. Claude calls booking tools (`check_availability`, `create_booking`, `list_bookings`, `cancel_booking`) automatically based on user intent.
+
 See **Swagger UI** at http://localhost:3001/api/docs for full documentation.
 
 ## Environment Variables
@@ -160,6 +170,7 @@ See **Swagger UI** at http://localhost:3001/api/docs for full documentation.
 | GOOGLE_CLIENT_ID     | Yes      | From Google Cloud Console                 |
 | GOOGLE_CLIENT_SECRET | Yes      | From Google Cloud Console                 |
 | FRONTEND_URL         | Yes      | `http://localhost:3000`                   |
+| ANTHROPIC_API_KEY    | Yes      | From https://console.anthropic.com        |
 
 ### Frontend (`apps/web/.env.local`)
 

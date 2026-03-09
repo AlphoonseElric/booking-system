@@ -8,6 +8,7 @@ import { ThemeProvider, useTheme } from '@/lib/theme-context';
 import { BookingForm } from '@/components/bookings/booking-form';
 import { BookingList } from '@/components/bookings/booking-list';
 import { BookingCalendar } from '@/components/bookings/booking-calendar';
+import { AiChatPanel } from '@/components/ai/ai-chat-panel';
 
 interface DashboardClientProps {
   initialBookings: Booking[];
@@ -17,7 +18,7 @@ interface DashboardClientProps {
   user?: { name?: string | null; email?: string | null; pictureUrl?: string | null };
 }
 
-type ViewMode = 'list' | 'calendar';
+type ViewMode = 'list' | 'calendar' | 'ai';
 
 // ── Outer shell: provides the theme context ──────────────
 export function DashboardClient(props: DashboardClientProps) {
@@ -148,7 +149,8 @@ function DashboardInner({
       {/* ── Main content ── */}
       <main className={`mx-auto px-4 sm:px-6 py-8 transition-all duration-200 ${
         viewMode === 'calendar' ? 'max-w-7xl' : 'max-w-5xl'
-      }`}>
+      }`}
+      >
         {/* Page title row */}
         <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
           <div className="min-w-0">
@@ -189,6 +191,12 @@ function DashboardInner({
                 }`}>
                 Cal
               </button>
+              <button onClick={() => setViewMode('ai')}
+                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                  viewMode === 'ai' ? viewOn : viewOff
+                }`}>
+                ✨ AI
+              </button>
             </div>
             <button onClick={refreshBookings} disabled={refreshing}
               className={`text-xs sm:text-sm disabled:opacity-40 transition-colors ${refBtn}`}>
@@ -197,8 +205,16 @@ function DashboardInner({
           </div>
         </div>
 
-        {/* ── Calendar view: full width ── */}
-        {viewMode === 'calendar' ? (
+        {/* ── AI Assistant view ── */}
+        {viewMode === 'ai' ? (
+          <AiChatPanel
+            backendToken={backendToken}
+            googleAccessToken={googleAccessToken}
+            googleRefreshToken={googleRefreshToken}
+            onBookingsChanged={refreshBookings}
+          />
+        ) : viewMode === 'calendar' ? (
+          /* ── Calendar view: full width ── */
           <BookingCalendar bookings={bookings} />
         ) : (
           /* ── List view: form (2/5) + list (3/5) ── */

@@ -10,6 +10,16 @@ export interface Booking {
   createdAt: string;
 }
 
+export interface AiChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface AiChatResponse {
+  reply: string;
+  bookingsChanged: boolean;
+}
+
 export interface AvailabilityResult {
   available: boolean;
   dbConflicts: { id: string; title: string; startTime: string; endTime: string }[];
@@ -82,5 +92,16 @@ export const apiClient = {
       { method: 'DELETE' },
       backendToken,
     );
+  },
+
+  aiChat(
+    backendToken: string,
+    data: {
+      messages: AiChatMessage[];
+      googleAccessToken: string;
+      googleRefreshToken: string;
+    },
+  ): Promise<AiChatResponse> {
+    return request('/ai/booking/chat', { method: 'POST', body: JSON.stringify(data) }, backendToken);
   },
 };
