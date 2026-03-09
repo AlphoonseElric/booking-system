@@ -29,10 +29,17 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# standalone output has server.js at root + all deps bundled (npm, no symlinks)
-COPY --from=builder /app/apps/web/.next/standalone ./
+# Copy standalone build (includes server.js and node_modules at root)
+COPY --from=builder /app/apps/web/.next/standalone/ ./
+
+# Copy static files and public folder
 COPY --from=builder /app/apps/web/.next/static ./.next/static
 COPY --from=builder /app/apps/web/public ./public
+
+# Create cache directory with proper permissions before switching to node user
+RUN mkdir -p /app/.next/cache && \
+    chown -R node:node /app && \
+    chmod -R u+w /app
 
 USER node
 EXPOSE 3000
