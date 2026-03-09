@@ -8,18 +8,19 @@ A robust booking solution designed to prevent double-bookings by performing real
 
 ### Core Features
 
-| Feature                 | Description                                                                                                                                      |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Google Login**        | Secure OAuth 2.0 authentication via next-auth (v5). Users sign in with their Google account.                                                     |
-| **Conflict Prevention** | Dual-layer verification (DB + GCal) before finalizing any booking. Checks both sources in parallel.                                              |
-| **Create Booking**      | Full booking creation flow with availability check first, then confirmation. Creates reservation in local DB and syncs event to Google Calendar. |
-| **List Bookings**       | Display all user bookings in list and calendar views. Shows upcoming and past reservations with details like title, time, and duration.          |
-| **Cancel Booking**      | Remove booking from both local database and Google Calendar. Verifies ownership before deletion.                                                 |
-| **Calendar View**       | Interactive UI (Day/Week/Month) built with Tailwind CSS. Google Calendar-like experience.                                                        |
-| **Bi-directional Sync** | Webhooks/Watch system to detect external changes in Google Calendar. Local DB stays synchronized when events are modified directly in GCal.      |
-| **Auto-Renewal**        | Cron jobs refresh Google "Watch" channels every 12 hours. Maintains continuous sync as watches expire after ~1 week.                             |
-| **Token Management**    | Automatic access token refresh when expired. Uses Google's refresh tokens to obtain new access tokens without user re-authentication.            |
-| **CI/CD Pipeline**      | GitHub Actions workflow for automated testing and deployment. Runs linting, type checking, and tests on every pull request.                      |
+| Feature                       | Description                                                                                                                                      |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Google Login**              | Secure OAuth 2.0 authentication via next-auth (v5). Users sign in with their Google account.                                                     |
+| **Conflict Prevention**       | Dual-layer verification (DB + GCal) before finalizing any booking. Checks both sources in parallel.                                              |
+| **Create Booking**            | Full booking creation flow with availability check first, then confirmation. Creates reservation in local DB and syncs event to Google Calendar. |
+| **List Bookings**             | Display all user bookings in list and calendar views. Shows upcoming and past reservations with details like title, time, and duration.          |
+| **Cancel Booking**            | Remove booking from both local database and Google Calendar. Verifies ownership before deletion.                                                 |
+| **Calendar View**             | Interactive UI (Day/Week/Month) built with Tailwind CSS. Google Calendar-like experience.                                                        |
+| **AI Booking Assistant**      | Natural language chat powered by Claude claude-haiku-4-5. Users type requests like "Book a meeting next Tuesday at 2pm" and the AI calls the appropriate booking tools automatically. |
+| **Bi-directional Sync**       | Webhooks/Watch system to detect external changes in Google Calendar. Local DB stays synchronized when events are modified directly in GCal.      |
+| **Auto-Renewal**              | Cron jobs refresh Google "Watch" channels every 12 hours. Maintains continuous sync as watches expire after ~1 week.                             |
+| **Token Management**          | Automatic access token refresh when expired. Uses Google's refresh tokens to obtain new access tokens without user re-authentication.            |
+| **CI/CD Pipeline**            | GitHub Actions workflow for automated testing and deployment. Runs linting, type checking, and tests on every pull request.                      |
 
 ---
 
@@ -81,6 +82,8 @@ apps/api/src/
 │   │   │   ├── create-booking.use-case.ts
 │   │   │   ├── get-user-bookings.use-case.ts
 │   │   │   └── cancel-booking.use-case.ts
+│   │   ├── ai/
+│   │   │   └── process-ai-chat.use-case.ts   # Orchestrates Claude tool-use loop
 │   │   └── calendar-watch/
 │   │       ├── create-watch.use-case.ts
 │   │       ├── handle-webhook.use-case.ts
@@ -88,6 +91,7 @@ apps/api/src/
 │   │       └── watch-renewal.cron.ts
 │   │
 │   └── dtos/                   # Data Transfer Objects
+│       └── ai-chat.dto.ts      # AiChatRequestDto, AiChatResponseDto
 │
 ├── infrastructure/               # External adapters
 │   ├── persistence/
@@ -101,10 +105,14 @@ apps/api/src/
 │   │   ├── google-calendar.service.ts
 │   │   └── google-calendar-watch.service.ts
 │   │
+│   ├── ai/                     # Claude AI adapter
+│   │   └── claude.service.ts   # Wraps @anthropic-ai/sdk, runs agentic tool loop
+│   │
 │   └── http/                   # REST controllers
 │       ├── controllers/
 │       │   ├── auth.controller.ts
 │       │   ├── bookings.controller.ts
+│       │   ├── ai-booking.controller.ts   # POST /ai/booking/chat
 │       │   ├── calendar-watch.controller.ts
 │       │   └── webhook.controller.ts
 │       ├── guards/
@@ -115,6 +123,7 @@ apps/api/src/
     ├── prisma.module.ts
     ├── auth.module.ts
     ├── bookings.module.ts
+    ├── ai-booking.module.ts    # imports BookingsModule, provides ClaudeService
     └── calendar-watch.module.ts
 ```
 
@@ -231,12 +240,13 @@ User 1──→ CalendarWatch
 
 ### Bookings
 
-| Method | Endpoint          | Description        | Auth       |
-| ------ | ----------------- | ------------------ | ---------- |
-| POST   | `/bookings/check` | Check availability | Bearer JWT |
-| POST   | `/bookings`       | Create booking     | Bearer JWT |
-| GET    | `/bookings`       | List bookings      | Bearer JWT |
-| DELETE | `/bookings/:id`   | Cancel booking     | Bearer JWT |
+| Method | Endpoint           | Description                        | Auth       |
+| ------ | ------------------ | ---------------------------------- | ---------- |
+| POST   | `/bookings/check`  | Check availability                 | Bearer JWT |
+| POST   | `/bookings`        | Create booking                     | Bearer JWT |
+| GET    | `/bookings`        | List bookings                      | Bearer JWT |
+| DELETE | `/bookings/:id`    | Cancel booking                     | Bearer JWT |
+| POST   | `/ai/booking/chat` | Natural language booking (AI)      | Bearer JWT |
 
 **POST /bookings/check - Request:**
 
@@ -289,6 +299,7 @@ User 1──→ CalendarWatch
 | `GOOGLE_CLIENT_ID`     | Google OAuth Client ID          | Yes      |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth Client Secret      | Yes      |
 | `FRONTEND_URL`         | Frontend URL for OAuth callback | Yes      |
+| `ANTHROPIC_API_KEY`    | Anthropic API key for Claude AI | Yes      |
 
 ### Frontend (apps/web/)
 
@@ -507,6 +518,7 @@ graph TB
     subgraph "External"
         Google["Google OAuth<br/>Calendar API"]
         DB["SQLite"]
+        Claude["Anthropic<br/>Claude API"]
     end
 
     UI --> Auth
@@ -517,6 +529,7 @@ graph TB
     Domain --> Infra
     Infra --> DB
     Infra --> Google
+    Infra --> Claude
     Auth --> Google
 ```
 
@@ -623,14 +636,16 @@ sequenceDiagram
 
 ## 15. Design Decisions
 
-| Decision             | Reason                                         |
-| -------------------- | ---------------------------------------------- |
-| Clean Architecture   | Clear separation of concerns, easy testing     |
-| SQLite + Prisma      | Fast development, embedded DB, easy migrations |
-| next-auth v5         | Complete OAuth handling, session extension     |
-| Auto token refresh   | Smooth UX, no frequent re-login                |
-| Watch + Cron renewal | Bidirectional sync with GCal                   |
-| Rollback on creation | Transactional consistency between DB and GCal  |
+| Decision               | Reason                                         |
+| ---------------------- | ---------------------------------------------- |
+| Clean Architecture     | Clear separation of concerns, easy testing     |
+| SQLite + Prisma        | Fast development, embedded DB, easy migrations |
+| next-auth v5           | Complete OAuth handling, session extension     |
+| Auto token refresh     | Smooth UX, no frequent re-login                |
+| Watch + Cron renewal   | Bidirectional sync with GCal                   |
+| Rollback on creation   | Transactional consistency between DB and GCal  |
+| Claude in infra layer  | AI adapter is a detail; use cases stay tool-agnostic |
+| claude-haiku-4-5       | Best cost/capability ratio for structured tool-use tasks |
 
 ---
 

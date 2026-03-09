@@ -49,6 +49,7 @@ pnpm dev
 | `GOOGLE_CLIENT_SECRET` | Yes      | From Google Cloud Console                                         |
 | `PORT`                 | No       | API port, default `3001`                                          |
 | `FRONTEND_URL`         | Yes      | Used for CORS. Set to `http://localhost:3000` in dev              |
+| `ANTHROPIC_API_KEY`    | Yes      | Anthropic API key for Claude AI. Get it from https://console.anthropic.com |
 
 ### Frontend — `apps/web/.env.local`
 
@@ -63,6 +64,20 @@ pnpm dev
 
 > ⚠️ **Important:** `DATABASE_URL` must be `file:./dev.db`, not `file:./prisma/dev.db`.
 > Prisma resolves SQLite paths relative to the **schema file** location, not the CWD.
+
+---
+
+## Anthropic / Claude Setup
+
+1. Create an account at [console.anthropic.com](https://console.anthropic.com)
+2. Go to **API Keys** → **Create Key**
+3. Copy the key into `apps/api/.env`:
+   ```
+   ANTHROPIC_API_KEY="sk-ant-api03-..."
+   ```
+4. The key is used exclusively server-side — it is never sent to the browser.
+
+New accounts receive free credits that are more than enough for development and demos.
 
 ---
 
@@ -234,3 +249,5 @@ booking-system/
 | `Insufficient Permission` (GCal)         | User token lacks `calendar.events` scope       | Sign out and log in again to re-request scope          |
 | CORS error                               | `FRONTEND_URL` mismatch                        | Set `FRONTEND_URL=http://localhost:3000` in API `.env` |
 | `Could not delete Google Calendar event` | Event was manually deleted in GCal             | Expected warning, booking is still cancelled in DB     |
+| `Anthropic API error 401`                | Missing or invalid `ANTHROPIC_API_KEY`         | Verify the key in `apps/api/.env`                      |
+| AI chat returns "Unable to complete"     | Conversation history too large or malformed    | The DTO caps messages at 50 and content at 4000 chars  |
